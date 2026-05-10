@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>环境监测系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+
+        body {
+            background: #f5f7fa;
+        }
+
+        /* 登录框 */
+        .login-box {
+            width: 400px;
+            background: white;
+            margin: 120px auto;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        .login-box h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .input-item {
+            margin-bottom: 20px;
+        }
+
+        .input-item label {
+            display: block;
+            margin-bottom: 8px;
+            color: #666;
+        }
+
+        .input-item input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: #1677ff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        /* 监测主页 */
+        .container {
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 20px;
+            display: none;
+        }
+
+        .header {
+            background: #1677ff;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+
+        .main {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .data-cards {
+            flex: 1;
+            min-width: 400px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+        }
+
+        .card .title {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .card .value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .video-box {
+            flex: 1;
+            min-width: 400px;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+        }
+
+        .video-box video {
+            width: 100%;
+            height: 380px;
+            background: #000;
+            border-radius: 8px;
+        }
+    </style>
+<!-- MQTT客户端库 -->
+<script src="https://cdn.jsdelivr.net/npm/mqtt@4.3.7/dist/mqtt.min.js"></script>
+</head>
+
+<body>
+
+    <!-- 登录界面 -->
+    <div class="login-box" id="loginPage">
+        <h2>管理员登录</h2>
+        <div class="input-item">
+            <label>账号</label>
+            <input type="text" id="username" placeholder="请输入账号">
+        </div>
+        <div class="input-item">
+            <label>密码</label>
+            <input type="password" id="password" placeholder="请输入密码">
+        </div>
+        <button class="login-btn" onclick="login()">登录</button>
+    </div>
+
+    <!-- 监测主页 -->
+    <div class="container" id="mainPage">
+        <div class="header">危险品仓库环境监测系统</div>
+        <div class="main">
+            <div class="data-cards">
+                <div class="card">
+                    <div class="title">温度</div>
+                    <div class="value" id="temp">26.5 ℃</div>
+                </div>
+                <div class="card">
+                    <div class="title">湿度</div>
+                    <div class="value" id="humi">52 %RH</div>
+                </div>
+                <div class="card">
+                    <div class="title">CO浓度</div>
+                    <div class="value" id="co">12 ppm</div>
+                </div>
+                <div class="card">
+                    <div class="title">甲烷浓度</div>
+                    <div class="value" id="ch4">350 ppm</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 登录逻辑
+f// 登录逻辑
+function login() {
+    let user = document.getElementById('username').value;
+    let pwd = document.getElementById('password').value;
+    if (user === 'a' && pwd === '1') {
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('mainPage').style.display = 'block';
+        connectMQTT(); // 登录后连接MQTT
+    } else {
+        alert('账号或密码错误');
+    }
+}
+
+let client;
+
+// 连接MQTT
+function connectMQTT() {
+    client = mqtt.connect('ws://broker.emqx.io:8083/mqtt');
+    
+    client.on('connect', function () {
+        console.log('MQTT连接成功');
+        client.subscribe('mine/data');
+    });
+
+    client.on('message', function (topic, message) {
+        try {
+            let data = JSON.parse(message.toString());
+            // 直接显示 ESP32 发来的 CH4、CO
+            document.getElementById('ch4').innerText = data.CH4 + " V";
+            document.getElementById('co').innerText = data.CO + " V";
+        } catch (e) { }
+    });
+}
+     </script>
+ </body>
+ </html>
