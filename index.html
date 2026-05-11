@@ -104,10 +104,11 @@
         let client;
 
         function connectMQTT() {
-            client = mqtt.connect('ws://broker.emqx.io:8083/mqtt');
+            // 关键修复：用 wss:// + 8884 端口，适配 HTTPS 页面
+            client = mqtt.connect('wss://broker.emqx.io:8884/mqtt');
             
             client.on('connect', function () {
-                console.log('MQTT连接成功');
+                console.log('✅ MQTT连接成功');
                 client.subscribe('mine/data');
             });
 
@@ -120,7 +121,14 @@
                     if (data.CO !== undefined) {
                         document.getElementById('co').innerText = data.CO + " V";
                     }
-                } catch (e) {}
+                    console.log("收到数据：", data);
+                } catch (e) {
+                    console.log("数据解析错误：", e);
+                }
+            });
+
+            client.on('error', function (err) {
+                console.log("❌ MQTT错误：", err);
             });
         }
     </script>
