@@ -153,19 +153,19 @@
             <div class="data-cards">
                 <div class="card">
                     <div class="title">温度</div>
-                    <div class="value" id="temp">26.5 ℃</div>
+                    <div class="value" id="temp">-- ℃</div>
                 </div>
                 <div class="card">
                     <div class="title">湿度</div>
-                    <div class="value" id="humi">52 %RH</div>
+                    <div class="value" id="humi">-- %RH</div>
                 </div>
                 <div class="card">
                     <div class="title">CO浓度</div>
-                    <div class="value" id="co">12 ppm</div>
+                    <div class="value" id="co">-- V</div>
                 </div>
                 <div class="card">
                     <div class="title">甲烷浓度</div>
-                    <div class="value" id="ch4">350 ppm</div>
+                    <div class="value" id="ch4">-- V</div>
                 </div>
             </div>
         </div>
@@ -173,39 +173,52 @@
 
     <script>
         // 登录逻辑
-f// 登录逻辑
-function login() {
-    let user = document.getElementById('username').value;
-    let pwd = document.getElementById('password').value;
-    if (user === 'a' && pwd === '1') {
-        document.getElementById('loginPage').style.display = 'none';
-        document.getElementById('mainPage').style.display = 'block';
-        connectMQTT(); // 登录后连接MQTT
-    } else {
-        alert('账号或密码错误');
-    }
-}
+        function login() {
+            let user = document.getElementById('username').value;
+            let pwd = document.getElementById('password').value;
+            if (user === 'a' && pwd === '1') {
+                document.getElementById('loginPage').style.display = 'none';
+                document.getElementById('mainPage').style.display = 'block';
+                connectMQTT(); // 登录后连接MQTT
+            } else {
+                alert('账号或密码错误');
+            }
+        }
 
-let client;
+        let client;
 
-// 连接MQTT
-function connectMQTT() {
-    client = mqtt.connect('ws://broker.emqx.io:8083/mqtt');
-    
-    client.on('connect', function () {
-        console.log('MQTT连接成功');
-        client.subscribe('mine/data');
-    });
+        // 连接MQTT
+        function connectMQTT() {
+            // 【关键修复】使用 EMQX 官方支持的 WebSocket 端口
+            client = mqtt.connect('ws://broker.emqx.io:8083/mqtt');
+            
+            client.on('connect', function () {
+                console.log('✅ MQTT 连接成功');
+                client.subscribe('mine/data'); // 订阅 ESP32 发送的数据主题
+            });
 
-    client.on('message', function (topic, message) {
-        try {
-            let data = JSON.parse(message.toString());
-            // 直接显示 ESP32 发来的 CH4、CO
-            document.getElementById('ch4').innerText = data.CH4 + " V";
-            document.getElementById('co').innerText = data.CO + " V";
-        } catch (e) { }
-    });
-}
-     </script>
+            client.on('message', function (topic, message) {
+                try {
+                    let data = JSON.parse(message.toString());
+                    
+                    // 实时更新网页数据
+                    if (data.CH4 !== undefined) {
+                        document.getElementById('ch4').innerText = data.CH4 + " V";
+                    }
+                    if (data.CO !== undefined) {
+                        document.getElementById('co').innerText = data.CO + " V";
+                    }
+
+                    console.log("收到数据：", data);
+                } catch (e) {
+                    console.log("数据解析错误：", e);
+                }
+            });
+
+            client.on('error', function (err) {
+                console.log("MQTT 错误：", err);
+            });
+        }
+    </script>
  </body>
  </html>
